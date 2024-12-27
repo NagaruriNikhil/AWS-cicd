@@ -1,9 +1,8 @@
-version: 0.2  # Updated to the correct version. 0.2 is the latest standard.
+version: 0.2
 
 phases:
   pre_build:
     commands:
-      - echo Starting pre-build phase...
       - mvn clean install
       - echo Logging in to Amazon ECR...
       - aws --version
@@ -13,25 +12,27 @@ phases:
       - IMAGE_TAG=build-$(echo $CODEBUILD_BUILD_ID | awk -F":" '{print $2}')
   build:
     commands:
-      - echo Starting build phase...
       - echo Build started on `date`
       - echo Building the Docker image...
       - docker build -t $REPOSITORY_URI:latest .
       - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
   post_build:
     commands:
-      - echo Starting post-build phase...
       - echo Build completed on `date`
-      - echo Pushing Docker images to ECR...
+      - echo Pushing the Docker images...
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:$IMAGE_TAG
       - echo Writing image definitions file...
-      - printf '[{"name":"AWS_CICD","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
-      - echo Docker container name: nikhil-registry
-      - echo Printing imagedefinitions.json:
+      - printf '[{"name":"demo","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+      - echo Writing image definitions file...
+      # add your container name
+      - DOCKER_CONTAINER_NAME=nikhil-registry
+      - printf '[{"name":"%s","imageUri":"%s"}]' $DOCKER_CONTAINER_NAME $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+      - echo $DOCKER_CONTAINER_NAME
+      - echo printing imagedefinitions.json
       - cat imagedefinitions.json
 
-artifacts:  # Correctly placed as a top-level key, outside `phases`
+artifacts:
   files:
     - imagedefinitions.json
-    - target/course-service.jar
+    - target/demo.jar
